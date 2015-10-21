@@ -12,7 +12,6 @@ const uvc_controls_t uvc_controls = {
 		.selector = 0x04, //CT_EXPOSURE_TIME_ABSOLUTE_CONTROL
 		.size = 4,
 	},
-    
     .incremental_exposure = {
 		.unit = UVC_INPUT_TERMINAL_ID,
 		.selector = 0x05, //CT_EXPOSURE_TIME_ABSOLUTE_CONTROL
@@ -68,7 +67,23 @@ const uvc_controls_t uvc_controls = {
 		.selector = 0x0B,
 		.size = 1,
 	},
+    .zoom = {
+        .unit = UVC_INPUT_TERMINAL_ID,
+        .selector = 0x0B,
+        .size = 2,
+    },
+    .pantilt = {
+        .unit = UVC_INPUT_TERMINAL_ID,
+        .selector = 0x0D,
+        .size = 8,
+    },
+    .backlight = {
+        .unit = UVC_PROCESSING_UNIT_ID,
+        .selector = 0x01,
+        .size = 2,
+    }
 };
+
 
 
 @implementation UVCCameraControl
@@ -257,11 +272,24 @@ const uvc_controls_t uvc_controls = {
 	controlRequest.bmRequestType = USBmakebmRequestType( kUSBOut, kUSBClass, kUSBInterface );
 	controlRequest.bRequest = UVC_SET_CUR;
 	controlRequest.wValue = (selector << 8) | interfaceNum;
-	controlRequest.wIndex = (unitId << 8) | interfaceNum;
+    //controlRequest.wIndex = (unitId << 8) | interfaceNum;
+    controlRequest.wIndex = (unitId << 8) | 0x00;
 	controlRequest.wLength = length;
 	controlRequest.wLenDone = 0;
 	controlRequest.pData = &value;
 	return [self sendControlRequest:controlRequest];
+}
+
+- (BOOL)setMultipleData:(void *)value withLength:(int)length forSelector:(int)selector at:(int)unitId {
+    IOUSBDevRequest controlRequest;
+    controlRequest.bmRequestType = USBmakebmRequestType( kUSBOut, kUSBClass, kUSBInterface );
+    controlRequest.bRequest = UVC_SET_CUR;
+    controlRequest.wValue = ( selector << 8) | 0x00;
+    controlRequest.wIndex = ( unitId <<8 ) | 0x00;
+    controlRequest.wLength = length;
+    controlRequest.wLenDone = 0;
+    controlRequest.pData = value;
+    return [self sendControlRequest:controlRequest];
 }
 
 
@@ -271,12 +299,27 @@ const uvc_controls_t uvc_controls = {
 	controlRequest.bmRequestType = USBmakebmRequestType( kUSBIn, kUSBClass, kUSBInterface );
 	controlRequest.bRequest = type;
 	controlRequest.wValue = (selector << 8) | interfaceNum;
-	controlRequest.wIndex = (unitId << 8) | interfaceNum;
+    //controlRequest.wIndex = (unitId << 8) | interfaceNum;
+    controlRequest.wIndex = (unitId << 8) | 0x00;
 	controlRequest.wLength = length;
 	controlRequest.wLenDone = 0;
 	controlRequest.pData = &value;
 	BOOL success = [self sendControlRequest:controlRequest];
 	return ( success ? value : 0 );
+}
+
+- (BOOL)getDataFor:(int)type withLength:(int)length fromSelector:(int)selector at:(int)unitId value:(void *)value {
+    IOUSBDevRequest controlRequest;
+    controlRequest.bmRequestType = USBmakebmRequestType( kUSBIn, kUSBClass, kUSBInterface );
+    controlRequest.bRequest = type;
+    controlRequest.wValue = (selector << 8) | interfaceNum;
+    //controlRequest.wIndex = (unitId << 8) | interfaceNum;
+    controlRequest.wIndex = (unitId << 8) | 0x00;
+    controlRequest.wLength = length;
+    controlRequest.wLenDone = 0;
+    controlRequest.pData = value;
+    BOOL success = [self sendControlRequest:controlRequest];
+    return [self sendControlRequest:controlRequest];
 }
 
 
@@ -325,7 +368,6 @@ const uvc_controls_t uvc_controls = {
 
 - (BOOL)setAutoExposure:(BOOL)enabled {
 	int intval = (enabled ? 0x08 : 0x01); // "auto exposure modes" ar NOT boolean (on|off) as it seems
-	printf("setAutoExposure = %i \n",enabled);
 	return [self setData:intval 
 			  withLength:uvc_controls.autoExposure.size 
 			 forSelector:uvc_controls.autoExposure.selector 
@@ -343,7 +385,6 @@ const uvc_controls_t uvc_controls = {
 }
 
 - (BOOL)setExposure:(float)value {
-	printf("exposure value %f \n",value);
 	value = 1 - value;
 	return [self setValue:value forControl:&uvc_controls.exposure];
 }
@@ -386,7 +427,6 @@ const uvc_controls_t uvc_controls = {
 - (BOOL)setAutoFocus:(BOOL)enabled {
 	//int intval = (enabled ? 0x08 : 0x01); //that's how eposure does it
 	int intval = (enabled ? 0x01 : 0x00); //that's how white balance does it
-	printf("setAutoFocus = %i \n",enabled);
 	return [self setData:intval 
 			  withLength:uvc_controls.autoFocus.size 
 			 forSelector:uvc_controls.autoFocus.selector 
@@ -404,7 +444,6 @@ const uvc_controls_t uvc_controls = {
 	return ( intval == 0x01 ? YES : NO );
 }
 - (BOOL)setAbsoluteFocus:(float)value {
-	printf("focus value %f \n",value);
 	//value = 1 - value;
 	return [self setValue:value forControl:&uvc_controls.focus];
 	
@@ -419,7 +458,6 @@ const uvc_controls_t uvc_controls = {
 //white balance
 - (BOOL)setAutoWhiteBalance:(BOOL)enabled {
 	int intval = (enabled ? 0x01 : 0x00);
-	printf("setAutoWhiteBalance = %i \n",enabled);
 	return [self setData:intval 
 			  withLength:uvc_controls.autoWhiteBalance.size 
 			 forSelector:uvc_controls.autoWhiteBalance.selector 
@@ -437,7 +475,6 @@ const uvc_controls_t uvc_controls = {
 }
 
 - (BOOL)setWhiteBalance:(float)value {
-	printf("whiteBalance value %f \n",value);
 	return [self setValue:value forControl:&uvc_controls.whiteBalance];
 }
 
@@ -448,8 +485,6 @@ const uvc_controls_t uvc_controls = {
 //---rest---
 
 - (BOOL)setGain:(float)value {
-	printf("gain value %f \n",value);
-	
 	return [self setValue:value forControl:&uvc_controls.gain];
 }
 
@@ -458,7 +493,6 @@ const uvc_controls_t uvc_controls = {
 }
 
 - (BOOL)setBrightness:(float)value {
-	printf("brightness value %f \n",value);
 	return [self setValue:value forControl:&uvc_controls.brightness];
 }
 
@@ -490,6 +524,52 @@ const uvc_controls_t uvc_controls = {
 	return [self getValueForControl:&uvc_controls.sharpness];
 }
 
+- (float)getZoom {
+    return [self getValueForControl:&uvc_controls.zoom];
+}
 
+- (BOOL)setZoom:(float)value {
+    return [self setValue:value forControl:&uvc_controls.zoom];
+}
 
+- (float)getPan {
+    int intvals[2];
+    
+    [self getDataFor:UVC_GET_CUR withLength:(&uvc_controls.pantilt)->size fromSelector:(&uvc_controls.pantilt)->selector at:(&uvc_controls.pantilt)->unit value:(void *)intvals];
+
+    return (float)intvals[0] / [self getRangeForControl:&uvc_controls.pantilt].max;
+}
+
+- (float)getTilt {
+    int intvals[2];
+    
+    [self getDataFor:UVC_GET_CUR withLength:(&uvc_controls.pantilt)->size fromSelector:(&uvc_controls.pantilt)->selector at:(&uvc_controls.pantilt)->unit value:(void *)intvals];
+    
+    return (float)intvals[1] / [self getRangeForControl:&uvc_controls.pantilt].max;
+}
+
+- (BOOL)setPan:(float)pan Tilt:(float)tilt {
+    int values[2];
+    int maxValue = [self getRangeForControl:&uvc_controls.pantilt].max;
+    values[0] = pan * maxValue;
+    values[1] = tilt * maxValue;
+    
+    return [self setMultipleData:(void *)values withLength:(&uvc_controls.pantilt)->size forSelector:(&uvc_controls.pantilt)->selector at:(&uvc_controls.pantilt)->unit];
+}
+
+- (BOOL)setBacklightCompensation:(BOOL)enabled {
+    int intval = (enabled ? 0x01 : 0x00);
+    return [self setData:intval
+              withLength:uvc_controls.backlight.size
+             forSelector:uvc_controls.backlight.selector
+                      at:uvc_controls.backlight.unit];
+}
+
+- (BOOL)getBacklightCompensation {
+    int intval = [self getDataFor:UVC_GET_CUR
+                       withLength:uvc_controls.backlight.size
+                     fromSelector:uvc_controls.backlight.selector
+                               at:uvc_controls.backlight.unit];
+    return ( intval ? YES : NO );
+}
 @end

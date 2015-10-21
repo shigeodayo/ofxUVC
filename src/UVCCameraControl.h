@@ -8,7 +8,8 @@
 
 
 #define UVC_INPUT_TERMINAL_ID 0x01
-#define UVC_PROCESSING_UNIT_ID 0x02
+//#define UVC_PROCESSING_UNIT_ID 0x02
+#define UVC_PROCESSING_UNIT_ID 0x03
 
 #define UVC_CONTROL_INTERFACE_CLASS 14
 #define UVC_CONTROL_INTERFACE_SUBCLASS 1
@@ -18,6 +19,11 @@
 #define UVC_GET_MIN	0x82
 #define UVC_GET_MAX	0x83
 #define UVC_GET_INFO 0x86
+
+#define UVC_LOGITECH_MOTOR 0x9
+
+#define LXU_MOTOR_PANTILT_RELATIVE_CONTROL              0x01
+#define LXU_MOTOR_PANTILT_RESET_CONTROL                 0x02
 
 typedef struct {
 	int min, max;
@@ -43,6 +49,9 @@ typedef struct {
 	uvc_control_info_t whiteBalance;
 	uvc_control_info_t autoWhiteBalance;
     uvc_control_info_t incremental_exposure;
+    uvc_control_info_t zoom;
+    uvc_control_info_t pantilt;
+    uvc_control_info_t backlight;
 } uvc_controls_t ;
 
 
@@ -60,7 +69,9 @@ typedef struct {
 
 - (BOOL)sendControlRequest:(IOUSBDevRequest)controlRequest;
 - (BOOL)setData:(long)value withLength:(int)length forSelector:(int)selector at:(int)unitID;
+- (BOOL)setMultipleData:(void *)value withLength:(int)length forSelector:(int)selector at:(int)unitID;
 - (long)getDataFor:(int)type withLength:(int)length fromSelector:(int)selector at:(int)unitID;
+- (BOOL)getDataFor:(int)type withLength:(int)length fromSelector:(int)selector at:(int)unitId value:(void *)value;
 
 - (uvc_range_t)getRangeForControl:(const uvc_control_info_t *)control;
 - (float)mapValue:(float)value fromMin:(float)fromMin max:(float)fromMax toMin:(float)toMin max:(float)toMax;
@@ -101,6 +112,13 @@ typedef struct {
 - (BOOL)setSharpness:(float)value;
 - (float)getSharpness;
 
+- (BOOL)setZoom:(float)value;
+- (float)getZoom;
+- (BOOL)setPan:(float)pan Tilt:(float)tilt;
+- (float)getPan;
+- (float)getTilt;
 
+- (BOOL)setBacklightCompensation:(BOOL)enabled;
+- (BOOL)getBacklightCompensation;
 
 @end

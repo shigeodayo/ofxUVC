@@ -62,7 +62,14 @@ class ofxUVC {
     void setSharpness(float value);
     float getSharpness();
 
-    
+    float getZoom();
+    bool setZoom(float value);
+    float getPan();
+    float getTilt();
+    bool setPanTilt(float pan, float tilt);
+        
+    void setBacklightCompensation(bool enabled);
+    bool getBacklightCompensation();
     
     vector<ofxUVCControl> getCameraControls();
     

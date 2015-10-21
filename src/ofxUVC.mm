@@ -108,6 +108,31 @@ float ofxUVC::getSharpness(){
     return [cameraControl getSharpness];
 }
 
+bool ofxUVC::setZoom(float value) {
+    return [cameraControl setZoom:value];
+}
+
+float ofxUVC::getZoom() {
+    return [cameraControl getZoom];
+}
+
+bool ofxUVC::setPanTilt(float pan, float tilt) {
+    return [cameraControl setPan:pan Tilt:tilt];
+}
+
+float ofxUVC::getPan() {
+    return [cameraControl getPan];
+}
+float ofxUVC::getTilt() {
+    return [cameraControl getTilt];
+}
+
+void ofxUVC::setBacklightCompensation(bool enabled) {
+    [cameraControl setBacklightCompensation:enabled];
+}
+bool ofxUVC::getBacklightCompensation() {
+    return [cameraControl getBacklightCompensation];
+}
 
 vector<ofxUVCControl> ofxUVC::getCameraControls(){
     vector<ofxUVCControl> result;
